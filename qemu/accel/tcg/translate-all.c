@@ -36,7 +36,7 @@
 #include "sysemu/tcg.h"
 #include "uc_priv.h"
 
-static bool tb_exec_is_locked(TCGContext*);
+bool tb_exec_is_locked(TCGContext*);
 static void tb_exec_change(TCGContext*, bool locked);
 
 /* #define DEBUG_TB_INVALIDATE */
@@ -2017,18 +2017,19 @@ void tcg_flush_softmmu_tlb(struct uc_struct *uc)
 
 
 #ifdef HAVE_PTHREAD_JIT_PROTECT
-static bool tb_exec_is_locked(TCGContext *tcg_ctx)
+bool tb_exec_is_locked(TCGContext *tcg_ctx)
 {
     return tcg_ctx->code_gen_locked;
 }
 
 static void tb_exec_change(TCGContext *tcg_ctx, bool locked)
 {
+    // printf("tb_exec_change: Switching to %d\n", locked);
     jit_write_protect(locked);
     tcg_ctx->code_gen_locked = locked;
 }
 #else /* not needed on non-Darwin platforms */
-static bool tb_exec_is_locked(TCGContext *tcg_ctx)
+bool tb_exec_is_locked(TCGContext *tcg_ctx)
 {
     return false;
 }

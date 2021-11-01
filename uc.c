@@ -185,6 +185,127 @@ static uc_err uc_init(uc_engine *uc)
     return UC_ERR_OK;
 }
 
+bool tb_exec_is_locked_mips64(TCGContext*);
+bool tb_exec_is_locked_mips64el(TCGContext*);
+bool tb_exec_is_locked_sparc64(TCGContext*);
+bool tb_exec_is_locked_x86_64(TCGContext*);
+bool tb_exec_is_locked_aarch64(TCGContext*);
+bool tb_exec_is_locked_riscv64(TCGContext*);
+bool tb_exec_is_locked_ppc64(TCGContext*);
+bool tb_exec_is_locked_mips(TCGContext*);
+bool tb_exec_is_locked_mipsel(TCGContext*);
+bool tb_exec_is_locked_m68k(TCGContext*);
+bool tb_exec_is_locked_ppc(TCGContext*);
+bool tb_exec_is_locked_arm(TCGContext*);
+bool tb_exec_is_locked_sparc(TCGContext*);
+bool tb_exec_is_locked_aarch64eb(TCGContext*);
+bool tb_exec_is_locked_armeb(TCGContext*);
+bool tb_exec_is_locked_riscv32(TCGContext*);
+
+static inline void uc_restore_write_protection(uc_engine *uc)
+{
+    // printf("uc_restore_write_protection: Switching to %d\n", uc->code_gen_locked);
+
+    pthread_jit_write_protect_np(uc->code_gen_locked);
+    return;
+}
+
+static inline void uc_save_write_protection(uc_engine *uc)
+{
+    uc_mode mode = uc->mode;
+
+
+    switch (uc->arch) {
+    default:
+        break;
+#ifdef UNICORN_HAS_M68K
+    case UC_ARCH_M68K:
+        uc->code_gen_locked = tb_exec_is_locked_m68k(uc->tcg_ctx);
+        break;
+#endif
+#ifdef UNICORN_HAS_X86
+    case UC_ARCH_X86:
+        uc->code_gen_locked = tb_exec_is_locked_x86_64(uc->tcg_ctx);
+        break;
+#endif
+#ifdef UNICORN_HAS_ARM
+    case UC_ARCH_ARM:
+        if (mode & UC_MODE_BIG_ENDIAN) {
+            uc->code_gen_locked = tb_exec_is_locked_armeb(uc->tcg_ctx);
+        } else {
+            uc->code_gen_locked = tb_exec_is_locked_arm(uc->tcg_ctx);
+        }
+        break;
+#endif
+#ifdef UNICORN_HAS_ARM64
+    case UC_ARCH_ARM64:
+        uc->code_gen_locked = tb_exec_is_locked_aarch64(uc->tcg_ctx);
+        break;
+#endif
+
+#if defined(UNICORN_HAS_MIPS) || defined(UNICORN_HAS_MIPSEL) ||                \
+    defined(UNICORN_HAS_MIPS64) || defined(UNICORN_HAS_MIPS64EL)
+    case UC_ARCH_MIPS:
+        if (mode & UC_MODE_BIG_ENDIAN) {
+#ifdef UNICORN_HAS_MIPS
+            if (mode & UC_MODE_MIPS32) {
+                uc->code_gen_locked = tb_exec_is_locked_mips(uc->tcg_ctx);
+            }
+#endif
+#ifdef UNICORN_HAS_MIPS64
+            if (mode & UC_MODE_MIPS64) {
+                uc->code_gen_locked = tb_exec_is_locked_mips64(uc->tcg_ctx);
+            }
+#endif
+        } else { // little endian
+#ifdef UNICORN_HAS_MIPSEL
+            if (mode & UC_MODE_MIPS32) {
+                uc->code_gen_locked = tb_exec_is_locked_mipsel(uc->tcg_ctx);
+            }
+#endif
+#ifdef UNICORN_HAS_MIPS64EL
+            if (mode & UC_MODE_MIPS64) {
+                uc->code_gen_locked = tb_exec_is_locked_mips64el(uc->tcg_ctx);
+            }
+#endif
+        }
+        break;
+#endif
+
+#ifdef UNICORN_HAS_SPARC
+    case UC_ARCH_SPARC:
+        if (mode & UC_MODE_SPARC64) {
+            uc->code_gen_locked = tb_exec_is_locked_sparc64(uc->tcg_ctx);
+        } else {
+            uc->code_gen_locked = tb_exec_is_locked_sparc(uc->tcg_ctx);
+        }
+        break;
+#endif
+#ifdef UNICORN_HAS_PPC
+    case UC_ARCH_PPC:
+        if (mode & UC_MODE_PPC64) {
+            uc->code_gen_locked = tb_exec_is_locked_ppc64(uc->tcg_ctx);
+        } else {
+            uc->code_gen_locked = tb_exec_is_locked_ppc(uc->tcg_ctx);
+        }
+        break;
+#endif
+#ifdef UNICORN_HAS_RISCV
+    case UC_ARCH_RISCV:
+        if (mode & UC_MODE_RISCV32) {
+            uc->code_gen_locked = tb_exec_is_locked_riscv32(uc->tcg_ctx);
+        } else if (mode & UC_MODE_RISCV64) {
+            uc->code_gen_locked = tb_exec_is_locked_riscv64(uc->tcg_ctx);
+        }
+        break;
+#endif
+    }
+
+    // printf("uc_save_write_protection: Switching to 1 (saved: %d)\n", uc->code_gen_locked);
+
+    pthread_jit_write_protect_np(true);
+}
+
 UNICORN_EXPORT
 uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 {
@@ -353,6 +474,11 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 
         *result = uc;
 
+        if (uc->reg_reset) {
+            uc->reg_reset(uc);
+        }
+
+        uc_save_write_protection(uc);
         return UC_ERR_OK;
     } else {
         return UC_ERR_ARCH;
@@ -371,11 +497,16 @@ uc_err uc_close(uc_engine *uc)
         free(uc);
         return UC_ERR_OK;
     }
+    uc_restore_write_protection(uc);
 
     // Cleanup internally.
     if (uc->release) {
         uc->release(uc->tcg_ctx);
     }
+
+    // Restore to executable state.
+    uc_save_write_protection(uc);
+
     g_free(uc->tcg_ctx);
 
     // Cleanup CPU.
@@ -449,7 +580,9 @@ uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)
     UC_INIT(uc);
 
     if (uc->reg_read) {
+        uc_restore_write_protection(uc);
         ret = uc->reg_read(uc, (unsigned int *)ids, vals, count);
+        uc_save_write_protection(uc);
     } else {
         return UC_ERR_HANDLE;
     }
@@ -465,7 +598,9 @@ uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
     UC_INIT(uc);
 
     if (uc->reg_write) {
+        uc_restore_write_protection(uc);
         ret = uc->reg_write(uc, (unsigned int *)ids, vals, count);
+        uc_save_write_protection(uc);
     } else {
         return UC_ERR_HANDLE;
     }
@@ -527,6 +662,8 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
         return UC_ERR_READ_UNMAPPED;
     }
 
+    uc_restore_write_protection(uc);
+
     // memory area can overlap adjacent memory blocks
     while (count < size) {
         MemoryRegion *mr = memory_mapping(uc, address);
@@ -543,6 +680,8 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
             break;
         }
     }
+
+    uc_save_write_protection(uc);
 
     if (count == size) {
         return UC_ERR_OK;
@@ -571,6 +710,8 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
     if (!check_mem_area(uc, address, size)) {
         return UC_ERR_WRITE_UNMAPPED;
     }
+
+    uc_restore_write_protection(uc);
 
     // memory area can overlap adjacent memory blocks
     while (count < size) {
@@ -601,6 +742,8 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
             break;
         }
     }
+
+    uc_save_write_protection(uc);
 
     if (count == size) {
         return UC_ERR_OK;
@@ -798,6 +941,8 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         uc_add_exit(uc, until);
     }
 
+    uc_restore_write_protection(uc);
+
     if (timeout) {
         enable_emu_timer(uc, timeout * 1000); // microseconds -> nanoseconds
     }
@@ -816,6 +961,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     }
 
     uc->nested_level--;
+    uc_save_write_protection(uc);
     return uc->invalid_error;
 }
 
@@ -828,6 +974,8 @@ uc_err uc_emu_stop(uc_engine *uc)
         return UC_ERR_OK;
     }
 
+    uc_restore_write_protection(uc);
+
     uc->stop_request = true;
     // TODO: make this atomic somehow?
     if (uc->cpu) {
@@ -835,6 +983,7 @@ uc_err uc_emu_stop(uc_engine *uc)
         cpu_exit(uc->cpu);
     }
 
+    uc_save_write_protection(uc);
     return UC_ERR_OK;
 }
 
@@ -1743,7 +1892,11 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
     case UC_QUERY_MODE:
 #ifdef UNICORN_HAS_ARM
         if (uc->arch == UC_ARCH_ARM) {
-            return uc->query(uc, type, result);
+            uc_restore_write_protection(uc);
+            uc_err ret = uc->query(uc, type, result);
+            uc_save_write_protection(uc);
+
+            return ret;
         }
 #endif
         *result = uc->mode;

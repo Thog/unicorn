@@ -1251,6 +1251,7 @@
 #define tb_flush tb_flush_riscv32
 #define tb_phys_invalidate tb_phys_invalidate_riscv32
 #define tb_gen_code tb_gen_code_riscv32
+#define tb_exec_is_locked tb_exec_is_locked_riscv32
 #define tb_exec_lock tb_exec_lock_riscv32
 #define tb_exec_unlock tb_exec_unlock_riscv32
 #define tb_invalidate_phys_page_range tb_invalidate_phys_page_range_riscv32

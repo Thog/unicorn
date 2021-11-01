@@ -1251,6 +1251,7 @@
 #define tb_flush tb_flush_ppc64
 #define tb_phys_invalidate tb_phys_invalidate_ppc64
 #define tb_gen_code tb_gen_code_ppc64
+#define tb_exec_is_locked tb_exec_is_locked_ppc64
 #define tb_exec_lock tb_exec_lock_ppc64
 #define tb_exec_unlock tb_exec_unlock_ppc64
 #define tb_invalidate_phys_page_range tb_invalidate_phys_page_range_ppc64

@@ -305,6 +305,14 @@ struct uc_struct {
     int v_l2_levels;
     /* code generation context */
     TCGContext *tcg_ctx;
+
+    /*
+     * True for X, False for W.
+     * This is used to backup TCGContext#code_gen_locked while switching back to user code.
+     * Source: https://developer.apple.com/documentation/apple_silicon/porting_just-in-time_compilers_to_apple_silicon?language=objc
+     */
+    bool code_gen_locked;
+
     /* memory.c */
     QTAILQ_HEAD(memory_listeners, MemoryListener) memory_listeners;
     QTAILQ_HEAD(, AddressSpace) address_spaces;

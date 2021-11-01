@@ -1251,6 +1251,7 @@ tb_cleanup \
 tb_flush \
 tb_phys_invalidate \
 tb_gen_code \
+tb_exec_is_locked \
 tb_exec_lock \
 tb_exec_unlock \
 tb_invalidate_phys_page_range \

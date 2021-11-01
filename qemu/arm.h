@@ -1251,6 +1251,7 @@
 #define tb_flush tb_flush_arm
 #define tb_phys_invalidate tb_phys_invalidate_arm
 #define tb_gen_code tb_gen_code_arm
+#define tb_exec_is_locked tb_exec_is_locked_arm
 #define tb_exec_lock tb_exec_lock_arm
 #define tb_exec_unlock tb_exec_unlock_arm
 #define tb_invalidate_phys_page_range tb_invalidate_phys_page_range_arm

@@ -1251,6 +1251,7 @@
 #define tb_flush tb_flush_mips
 #define tb_phys_invalidate tb_phys_invalidate_mips
 #define tb_gen_code tb_gen_code_mips
+#define tb_exec_is_locked tb_exec_is_locked_mips
 #define tb_exec_lock tb_exec_lock_mips
 #define tb_exec_unlock tb_exec_unlock_mips
 #define tb_invalidate_phys_page_range tb_invalidate_phys_page_range_mips

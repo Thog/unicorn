@@ -1251,6 +1251,7 @@
 #define tb_flush tb_flush_m68k
 #define tb_phys_invalidate tb_phys_invalidate_m68k
 #define tb_gen_code tb_gen_code_m68k
+#define tb_exec_is_locked tb_exec_is_locked_m68k
 #define tb_exec_lock tb_exec_lock_m68k
 #define tb_exec_unlock tb_exec_unlock_m68k
 #define tb_invalidate_phys_page_range tb_invalidate_phys_page_range_m68k

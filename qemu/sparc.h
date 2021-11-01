@@ -1251,6 +1251,7 @@
 #define tb_flush tb_flush_sparc
 #define tb_phys_invalidate tb_phys_invalidate_sparc
 #define tb_gen_code tb_gen_code_sparc
+#define tb_exec_is_locked tb_exec_is_locked_sparc
 #define tb_exec_lock tb_exec_lock_sparc
 #define tb_exec_unlock tb_exec_unlock_sparc
 #define tb_invalidate_phys_page_range tb_invalidate_phys_page_range_sparc
