@@ -190,6 +190,9 @@ static void reg_read(CPUARMState *env, unsigned int regid, void *value)
             case UC_ARM_REG_FPEXC:
                 *(int32_t *)value = env->vfp.xregs[ARM_VFP_FPEXC];
                 break;
+            case UC_ARM_REG_FPSCR:
+                 *(int32_t *)value = vfp_get_fpscr(env);
+                 break;
             case UC_ARM_REG_IPSR:
                 *(int32_t *)value = v7m_mrs_xpsr(env, 5);
                 break;
@@ -285,6 +288,9 @@ static void reg_write(CPUARMState *env, unsigned int regid, const void *value)
                 break;
             case UC_ARM_REG_FPEXC:
                 env->vfp.xregs[ARM_VFP_FPEXC] = *(int32_t *)value;
+                break;
+            case UC_ARM_REG_FPSCR:
+                vfp_set_fpscr(env, *(uint32_t *)value);
                 break;
             case UC_ARM_REG_IPSR:
                 v7m_msr_xpsr(env, 0b1000, 5, *(uint32_t *)value);
