@@ -292,6 +292,7 @@ typedef enum uc_arm64_reg {
     UC_ARM64_REG_PC, // program counter register
 
     UC_ARM64_REG_CPACR_EL1,
+    UC_ARM64_REG_ESR,
 
     //> thread registers
     UC_ARM64_REG_TPIDR_EL0,
@@ -299,6 +300,10 @@ typedef enum uc_arm64_reg {
     UC_ARM64_REG_TPIDR_EL1,
 
     UC_ARM64_REG_PSTATE,
+
+    //> floating point control and status registers
+    UC_ARM64_REG_FPCR,
+    UC_ARM64_REG_FPSR,
 
     //> exception link registers
     UC_ARM64_REG_ELR_EL0,
