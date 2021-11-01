@@ -388,6 +388,7 @@ TranslationBlock *tb_htable_lookup(CPUState *cpu, target_ulong pc,
                                    target_ulong cs_base, uint32_t flags,
                                    uint32_t cf_mask);
 void tb_set_jmp_target(TranslationBlock *tb, int n, uintptr_t addr);
+bool tb_exec_is_locked(TCGContext*);
 void tb_exec_lock(TCGContext*);
 void tb_exec_unlock(TCGContext*);
 
