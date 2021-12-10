@@ -160,6 +160,8 @@ static gint uc_exits_cmp(gconstpointer a, gconstpointer b, gpointer user_data)
     }
 }
 
+static inline void uc_save_write_protection(uc_engine *uc);
+
 static uc_err uc_init(uc_engine *uc)
 {
 
@@ -181,6 +183,8 @@ static uc_err uc_init(uc_engine *uc)
     }
 
     uc->init_done = true;
+
+    uc_save_write_protection(uc);
 
     return UC_ERR_OK;
 }
@@ -478,7 +482,6 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
             uc->reg_reset(uc);
         }
 
-        uc_save_write_protection(uc);
         return UC_ERR_OK;
     } else {
         return UC_ERR_ARCH;
